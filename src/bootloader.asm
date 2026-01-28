@@ -188,8 +188,8 @@ main:
 
     ; 2. Call disk_read
     mov ax, 1           ; LBA=1 (start reading from 2nd sector, 1st is bootloader)
-    mov cl, 1           ; Read 1 sector
-    mov dl, [ebr_drive_number] ; Drive number (passed by BIOS in DL, saved in BPB)
+    mov cl, 20          ; Read 20 sector
+    mov [ebr_drive_number], dl ; Drive number (passed by BIOS in DL, saved in BPB)
     call disk_read
 
     ; Print success
@@ -197,8 +197,7 @@ main:
     call puts
 
     ; 3. Jump to the new code!
-    ; In the future, you will uncomment this line:
-    ; jmp 0x0000:0x1000
+    jmp 0x0000:0x1000
 
     hlt
 
