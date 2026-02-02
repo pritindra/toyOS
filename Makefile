@@ -28,8 +28,8 @@ $(BUILD_DIR)/bootloader.bin: $(SRC_DIR)/bootloader.asm
 	$(ASM) $(SRC_DIR)/bootloader.asm -f bin -o $(BUILD_DIR)/bootloader.bin
 
 # 3. Link the Kernel (Entry + C code)
-$(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/entry.o $(BUILD_DIR)/kernel.o
-	$(LD) $(LDFLAGS) -o $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/entry.o $(BUILD_DIR)/kernel.o
+$(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/entry.o $(BUILD_DIR)/kernel.o $(BUILD_DIR)/uart.o
+	$(LD) $(LDFLAGS) -o $(BUILD_DIR)/kernel.bin $(BUILD_DIR)/entry.o $(BUILD_DIR)/kernel.o $(BUILD_DIR)/uart.o
 
 # 4. Assemble the Kernel Entry (32-bit assembly)
 $(BUILD_DIR)/entry.o: $(SRC_DIR)/entry.asm
@@ -41,9 +41,13 @@ $(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel.c
 	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(SRC_DIR)/kernel.c -o $(BUILD_DIR)/kernel.o
 
+$(BUILD_DIR)/uart.o: $(SRC_DIR)/uart.c
+	mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) $(SRC_DIR)/uart.c -o $(BUILD_DIR)/uart.o
+
 # 6. Run in QEMU (Convenience)
 run: $(BUILD_DIR)/bootloader_floppy.img
-	qemu-system-i386 -drive format=raw,file=$(BUILD_DIR)/bootloader_floppy.img
+	qemu-system-i386 -drive format=raw,file=$(BUILD_DIR)/bootloader_floppy.img --serial stdio
 
 # 7. Clean build files
 clean:
