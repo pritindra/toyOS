@@ -19,11 +19,10 @@ void kernel_main() {
 
     idt_init();
 
-    printf("Kernel Started ....");
+    printf("Play with the toy OS..\n");
+    printf("> ");
 
     enable_interrupts();
-    
-    printf("Interrupts enabled. Type something!\n");
 
     while(1) {
         asm volatile("hlt");
