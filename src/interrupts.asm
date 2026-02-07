@@ -21,6 +21,28 @@ isr0:
     jmp isr_common_stub ; Jump to common handler
 
 ; ------------------------------------------------------------------------------
+; ISR 32: Timer Interrupt (IRQ 0)
+; ------------------------------------------------------------------------------
+global isr32
+isr32:
+    cli
+    push 0              ; Dummy error code
+    push 32             ; Interrupt Number
+    jmp isr_common_stub
+
+    
+; ------------------------------------------------------------------------------
+; ISR 33: Keyboard Interrupt (IRQ 1)
+; ------------------------------------------------------------------------------
+global isr33
+isr33:
+    cli
+    push 0              ; Dummy error code
+    push 33             ; Interrupt Number
+    jmp isr_common_stub ; Jump to the existing C handler logic
+
+
+; ------------------------------------------------------------------------------
 ; Common Stub: Saves state and calls C
 ; ------------------------------------------------------------------------------
 isr_common_stub:

@@ -5,6 +5,8 @@ idt_entry_t idt[256];
 idtr_t idtr;
 
 extern void isr0();
+extern void isr32();
+extern void isr33();
 
 // Assembly helper
 extern void idt_load(idtr_t* ptr);
@@ -26,6 +28,8 @@ void idt_init() {
     // 0x08 is the Code Segment Offset in GDT
     // 0x8E means "Present, Ring 0, Interrupt Gate"
     idt_set_gate(0, (uint32_t)isr0, 0x08, 0x8E);
+    idt_set_gate(32, (uint32_t)isr32, 0x08, 0x8E);
+    idt_set_gate(33, (uint32_t)isr33, 0x08, 0x8E);
     
     // 3. Load the IDT
     idt_load(&idtr);
