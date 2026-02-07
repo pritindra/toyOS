@@ -94,7 +94,7 @@ void printf(const char* fmt, ...) {
             }
             case 'x': {
                 int x = va_arg(args, int);
-                putc('0'); putc('x'); // Optional: print prefix
+                putc('0'); putc('x'); 
                 xint(x, 16);
                 break;
             }
