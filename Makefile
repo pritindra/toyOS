@@ -17,7 +17,8 @@ LDFLAGS = -m elf_i386 -T linker/linker.ld --oformat binary
 C_SOURCES = $(wildcard $(SRC_DIR)/kernel/*.c) \
             $(wildcard $(SRC_DIR)/drivers/*.c) \
             $(wildcard $(SRC_DIR)/cpu/*.c) \
-            $(wildcard $(SRC_DIR)/lib/*.c)
+            $(wildcard $(SRC_DIR)/lib/*.c) \
+			$(wildcard $(SRC_DIR)/memory/*.c)
 
 # 2. Assembly Files (Exclude bootloader & entry)
 ASM_SOURCES = $(wildcard $(SRC_DIR)/boot/*.asm)
