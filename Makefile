@@ -1,96 +1,71 @@
-ASM=nasm
-CC=gcc
-LD=ld
+ASM = nasm
+CC = gcc
+LD = ld
 
-SRC_DIR=src
-LINKER_SCRIPT=linker/linker.ld
-BUILD_DIR=build
+SRC_DIR = src
+BUILD_DIR = build
+INCLUDE_DIR = src/include
 
-# Compiler flags
-CFLAGS=-m32 -ffreestanding -fno-pic -fno-pie -fno-stack-protector -nostdlib -c
+CFLAGS = -m32 -ffreestanding -fno-pic -fno-pie -fno-stack-protector -nostdlib -c -I$(INCLUDE_DIR)
+LDFLAGS = -m elf_i386 -T linker/linker.ld --oformat binary
 
-# Linker flags
-LDFLAGS=-m elf_i386 -T $(LINKER_SCRIPT) --oformat binary
+# ------------------------------------------------------------------------------
+# File Discovery
+# ------------------------------------------------------------------------------
 
-# Default target
+# 1. C Files
+C_SOURCES = $(wildcard $(SRC_DIR)/kernel/*.c) \
+            $(wildcard $(SRC_DIR)/drivers/*.c) \
+            $(wildcard $(SRC_DIR)/cpu/*.c) \
+            $(wildcard $(SRC_DIR)/lib/*.c)
+
+# 2. Assembly Files (Exclude bootloader & entry)
+ASM_SOURCES = $(wildcard $(SRC_DIR)/boot/*.asm)
+ASM_SOURCES := $(filter-out $(SRC_DIR)/boot/bootloader.asm, $(ASM_SOURCES))
+ASM_SOURCES := $(filter-out $(SRC_DIR)/boot/entry.asm, $(ASM_SOURCES))
+
+# 3. Generate Object Lists
+# We use full paths under build/ (e.g., build/src/kernel/kernel.o)
+C_OBJS = $(patsubst %.c, $(BUILD_DIR)/%.o, $(C_SOURCES))
+ASM_OBJS = $(patsubst %.asm, $(BUILD_DIR)/%.o, $(ASM_SOURCES))
+
+# 4. entry.o MUST be separate so we can put it first
+ENTRY_OBJ = $(BUILD_DIR)/$(SRC_DIR)/boot/entry.o
+
+# ------------------------------------------------------------------------------
+# Targets
+# ------------------------------------------------------------------------------
+
 all: $(BUILD_DIR)/bootloader_floppy.img
 
-# ------------------------------------------------------------------------------
-# 1. Final Disk Image
-# ------------------------------------------------------------------------------
 $(BUILD_DIR)/bootloader_floppy.img: $(BUILD_DIR)/bootloader.bin $(BUILD_DIR)/kernel.bin
-	cat $(BUILD_DIR)/bootloader.bin $(BUILD_DIR)/kernel.bin > $(BUILD_DIR)/bootloader_floppy.img
-	truncate -s 1440k $(BUILD_DIR)/bootloader_floppy.img
+	cat $^ > $@
+	truncate -s 1440k $@
+
+$(BUILD_DIR)/bootloader.bin: $(SRC_DIR)/boot/bootloader.asm
+	@mkdir -p $(dir $@)
+	$(ASM) $< -f bin -o $@
+
+# CRITICAL: Link ENTRY_OBJ first!
+$(BUILD_DIR)/kernel.bin: $(ENTRY_OBJ) $(C_OBJS) $(ASM_OBJS)
+	$(LD) $(LDFLAGS) -o $@ $^
 
 # ------------------------------------------------------------------------------
-# 2. Bootloader
-# ------------------------------------------------------------------------------
-$(BUILD_DIR)/bootloader.bin: $(SRC_DIR)/bootloader.asm
-	mkdir -p $(BUILD_DIR)
-	$(ASM) $(SRC_DIR)/bootloader.asm -f bin -o $(BUILD_DIR)/bootloader.bin
-
-# ------------------------------------------------------------------------------
-# 3. Kernel Linking
-# ------------------------------------------------------------------------------
-$(BUILD_DIR)/kernel.bin: $(BUILD_DIR)/entry.o \
-                         $(BUILD_DIR)/kernel.o \
-                         $(BUILD_DIR)/uart.o \
-                         $(BUILD_DIR)/printf.o \
-                         $(BUILD_DIR)/interrupts.o \
-                         $(BUILD_DIR)/idt.o \
-                         $(BUILD_DIR)/isr.o \
-                         $(BUILD_DIR)/pic.o \
-                         $(BUILD_DIR)/keyboard.o
-	$(LD) $(LDFLAGS) -o $(BUILD_DIR)/kernel.bin $^
-
-# ------------------------------------------------------------------------------
-# 4. Compilation Rules
+# Rules
 # ------------------------------------------------------------------------------
 
-# Assembly Files
-$(BUILD_DIR)/entry.o: $(SRC_DIR)/entry.asm
-	mkdir -p $(BUILD_DIR)
-	$(ASM) $(SRC_DIR)/entry.asm -f elf32 -o $(BUILD_DIR)/entry.o
+# Rule for C files
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $< -o $@
 
-# Interrupts Assembly Stub
-$(BUILD_DIR)/interrupts.o: $(SRC_DIR)/interrupts.asm
-	mkdir -p $(BUILD_DIR)
-	$(ASM) $(SRC_DIR)/interrupts.asm -f elf32 -o $(BUILD_DIR)/interrupts.o
+# Rule for Assembly files
+$(BUILD_DIR)/%.o: %.asm
+	@mkdir -p $(dir $@)
+	$(ASM) $< -f elf32 -o $@
 
-# C Files
-$(BUILD_DIR)/kernel.o: $(SRC_DIR)/kernel.c
-	mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(SRC_DIR)/kernel.c -o $(BUILD_DIR)/kernel.o
-
-$(BUILD_DIR)/uart.o: $(SRC_DIR)/uart.c
-	mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(SRC_DIR)/uart.c -o $(BUILD_DIR)/uart.o
-
-$(BUILD_DIR)/printf.o: $(SRC_DIR)/printf.c
-	mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(SRC_DIR)/printf.c -o $(BUILD_DIR)/printf.o
-
-$(BUILD_DIR)/idt.o: $(SRC_DIR)/idt.c
-	mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(SRC_DIR)/idt.c -o $(BUILD_DIR)/idt.o
-
-$(BUILD_DIR)/isr.o: $(SRC_DIR)/isr.c
-	mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(SRC_DIR)/isr.c -o $(BUILD_DIR)/isr.o
-
-$(BUILD_DIR)/pic.o: $(SRC_DIR)/pic.c
-	mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(SRC_DIR)/pic.c -o $(BUILD_DIR)/pic.o
-
-$(BUILD_DIR)/keyboard.o: $(SRC_DIR)/keyboard.c
-	mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(SRC_DIR)/keyboard.c -o $(BUILD_DIR)/keyboard.o
-
-# ------------------------------------------------------------------------------
-# 5. Run & Clean
-# ------------------------------------------------------------------------------
 run: $(BUILD_DIR)/bootloader_floppy.img
 	qemu-system-i386 -fda $(BUILD_DIR)/bootloader_floppy.img -serial stdio -boot order=a
 
 clean:
-	rm -rf $(BUILD_DIR)/*
+	rm -rf $(BUILD_DIR)
