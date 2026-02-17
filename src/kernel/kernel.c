@@ -3,6 +3,7 @@
 #include "pic.h"
 #include "pmm.h"
 #include "vmm.h"
+#include "heap.h"
 // 0xB8000 is the video memory address for VGA text mode color
 volatile unsigned char* video_memory = (unsigned char*)0xB8000;
 
@@ -25,7 +26,25 @@ void kernel_main() {
 
     vmm_init();
 
-    printf("Kernel is running with Paging enabled!\n");
+    heap_init();
+
+    // --- HEAP TEST ---
+    printf("Allocating string...\n");
+    char* str = (char*)kmalloc(10);
+    str[0] = 'H'; str[1] = 'i'; str[2] = '\0';
+    printf("String content: %s (Address: 0x%x)\n", str, (unsigned int)str);
+
+    printf("Allocating struct...\n");
+    int* numbers = (int*)kmalloc(3 * sizeof(int)); // Array of 3 ints
+    numbers[0] = 100;
+    numbers[1] = 200;
+    numbers[2] = 300;
+    printf("Numbers: %d, %d, %d\n", numbers[0], numbers[1], numbers[2]);
+
+    kfree(str);
+    kfree(numbers);
+
+    // printf("Kernel is running with Paging enabled!\n");
     // --- TEST PMM ---
     // printf("Allocating A...\n");
     // void* a = pmm_alloc_block();
