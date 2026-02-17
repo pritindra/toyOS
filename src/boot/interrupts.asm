@@ -69,3 +69,27 @@ isr_common_stub:
     add esp, 8          ; Clean up the pushed error code and ISR number
     sti                 ; Re-enable interrupts
     iret                ; Return from interrupt (pops CS, EIP, EFLAGS)  
+
+; ------------------------------------------------------------------------------
+; Paging Helpers
+; ------------------------------------------------------------------------------
+global load_page_directory
+load_page_directory:
+    push ebp
+    mov ebp, esp
+    mov eax, [ebp+8]    ; Get the pointer to page directory
+    mov cr3, eax        ; Load CR3
+    mov esp, ebp
+    pop ebp
+    ret
+
+global enable_paging
+enable_paging:
+    push ebp
+    mov ebp, esp
+    mov eax, cr0        ; Read CR0
+    or eax, 0x80000000  ; Set Bit 31 (PG - Paging)
+    mov cr0, eax        ; Write back CR0
+    mov esp, ebp
+    pop ebp
+    ret
