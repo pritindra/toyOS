@@ -39,7 +39,7 @@ void keyboard_handler(registers_t* regs) {
     if (scancode < 128) {
         char c = kbdus[scancode];
         if (c != 0) {
-            // Producer: Write to buffer
+            // printf("%c", c);
             kb_buffer_write(c);
         }
     }

@@ -3,6 +3,7 @@
 #include "pic.h"
 
 void keyboard_handler(registers_t* regs);
+extern void timer_callback();
 
 void isr_handler(registers_t regs) {
     // Handle IRQ 1 (Keyboard) -> Interrupt 33
@@ -11,6 +12,7 @@ void isr_handler(registers_t regs) {
     }
     else if (regs.int_no == 32) {
         // TIMER INTERRUPT (IRQ 0)
+        timer_callback();
         pic_send_eoi(0);
     }
     else if (regs.int_no == 0) {

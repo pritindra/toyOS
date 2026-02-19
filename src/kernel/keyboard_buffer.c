@@ -1,8 +1,8 @@
 #include "keyboard_buffer.h"
 
-char kb_buffer[KB_BUFFER_SIZE];
-int kb_write_idx = 0;
-int kb_read_idx = 0;
+volatile char kb_buffer[KB_BUFFER_SIZE];
+volatile int kb_write_idx = 0;
+volatile int kb_read_idx = 0;
 
 void kb_buffer_init() {
     kb_write_idx = 0;

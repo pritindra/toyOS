@@ -2,10 +2,11 @@
 #include "stdio.h"
 
 // Pointer to the first block in the list
-header_t* head = (header_t*)HEAP_START;
+header_t* head = 0;
 
 void heap_init() {
     // one massive free block covering the entire heap
+    head = (header_t*)HEAP_START;
     head->next = 0;
     head->size = HEAP_SIZE - sizeof(header_t);
     head->is_free = 1;

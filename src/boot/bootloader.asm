@@ -188,7 +188,7 @@ main:
 
     ; 2. Call disk_read
     mov ax, 1           ; LBA=1 (start reading from 2nd sector, 1st is bootloader)
-    mov cl, 20          ; Read 20 sector
+    mov cl, 40          ; Read 20 sector
     mov [ebr_drive_number], dl ; Drive number (passed by BIOS in DL, saved in BPB)
     call disk_read
 

@@ -2,6 +2,7 @@
 #include "string.h"
 #include "keyboard_buffer.h"
 #include "process.h"
+#include "io.h"
 
 void shell_task() {
     char cmd_buffer[100];
@@ -32,7 +33,7 @@ void shell_task() {
                     printf("Hello from Multitasking Shell!\n");
                 }
                 else if (strcmp(cmd_buffer, "reboot") == 0) {
-                   // outb(0x64, 0xFE); // Add io.h if you want this to work
+                   outb(0x64, 0xFE); 
                    printf("Rebooting...\n");
                 }
                 else {
