@@ -65,8 +65,11 @@ $(BUILD_DIR)/%.o: %.asm
 	@mkdir -p $(dir $@)
 	$(ASM) $< -f elf32 -o $@
 
+# Create a 10MB empty hard drive file if it doesn't exist, then run QEMU
 run: $(BUILD_DIR)/bootloader_floppy.img
-	qemu-system-i386 -fda $(BUILD_DIR)/bootloader_floppy.img -serial stdio -boot order=a
-
+	@if [ ! -f $(BUILD_DIR)/hdd.img ]; then \
+		dd if=/dev/zero of=$(BUILD_DIR)/hdd.img bs=1M count=10; \
+	fi
+	qemu-system-i386 -fda $(BUILD_DIR)/bootloader_floppy.img -drive file=$(BUILD_DIR)/hdd.img,format=raw,index=0,media=disk -serial stdio -boot order=a
 clean:
 	rm -rf $(BUILD_DIR)

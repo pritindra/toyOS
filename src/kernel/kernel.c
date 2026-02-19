@@ -1,6 +1,7 @@
 #include "stdio.h"
 #include "idt.h"
 #include "pic.h"
+#include "ata.h"
 #include "pmm.h"
 #include "vmm.h"
 #include "heap.h"
@@ -29,6 +30,31 @@ void clock_task() {
     }
 }
 
+void test_ata_disk() {
+    uint8_t write_buf[512];
+    uint8_t read_buf[512];
+
+    // Clear both buffers
+    for(int i = 0; i < 512; i++) {
+        write_buf[i] = 0;
+        read_buf[i] = 0;
+    }
+
+    // Prepare our message
+    const char* msg = "Hello from Sector 0! Permanent storage is working!";
+    for(int i = 0; msg[i] != '\0'; i++) {
+        write_buf[i] = msg[i];
+    }
+
+    printf("\n[ATA] Writing to Sector 0...\n");
+    ata_write_sector(0, write_buf);
+
+    printf("[ATA] Reading from Sector 0...\n");
+    ata_read_sector(0, read_buf);
+
+    printf("[ATA] Data read: %s\n\n", (char*)read_buf);
+}
+
 void kernel_main() {
 
     serial_init();
@@ -44,6 +70,8 @@ void kernel_main() {
     vmm_init();
 
     heap_init();
+
+    // test_ata_disk();
 
     process_init();
 
