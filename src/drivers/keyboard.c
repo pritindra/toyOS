@@ -2,6 +2,7 @@
 #include "pic.h"
 #include "stdio.h"
 #include "isr.h"
+#include "keyboard_buffer.h"
 
 #define MAX_CMD_SIZE 100
 char key_buffer[MAX_CMD_SIZE];
@@ -24,70 +25,26 @@ unsigned char kbdus[128] = {
 };
 
 // -----------------------------------------------------------------------------
-// Helper: String Compare
-// Returns 0 if strings are equal
-// -----------------------------------------------------------------------------
-int strcmp(const char* s1, const char* s2) {
-    while (*s1 && (*s1 == *s2)) {
-        s1++;
-        s2++;
-    }
-    return *(const unsigned char*)s1 - *(const unsigned char*)s2;
-}
-
-// -----------------------------------------------------------------------------
 // Keyboard Handler
 // -----------------------------------------------------------------------------
 void keyboard_handler(registers_t* regs) {
-
     unsigned char scancode = inb(0x60);
 
-    if (scancode & 0x80){
+    // Ignore key releases
+    if (scancode & 0x80) {
         pic_send_eoi(1);
         return;
     }
 
-    // Convert scancode to ASCII (simplistic)
-    // You likely have a lookup table 'kbdus' from previous steps
-    char c = kbdus[scancode]; 
-
-    if (c == '\n') {
-        // User hit Enter! Handle the command
-        printf("\n");
-        key_buffer[buffer_idx] = '\0'; // Null-terminate string
-        
-        if (strcmp(key_buffer, "help") == 0) {
-            printf("Available commands: help, hello, reboot\n");
-        } 
-        else if (strcmp(key_buffer, "hello") == 0) {
-            printf("Hello User!\n");
-        }
-        else if (strcmp(key_buffer, "reboot") == 0) {
-            outb(0x64, 0xFE); // CPU Reset command
-        }
-        else {
-            printf("Unknown command: %s\n", key_buffer);
-        }
-
-        // Reset buffer
-        buffer_idx = 0;
-        printf("> ");
-    } 
-    else if (c == '\b') {
-        // Backspace
-        if (buffer_idx > 0) {
-            buffer_idx--;
-            printf("\b \b"); // Visually delete
+    if (scancode < 128) {
+        char c = kbdus[scancode];
+        if (c != 0) {
+            // Producer: Write to buffer
+            kb_buffer_write(c);
         }
     }
-    else {
-        // Normal character
-        if (buffer_idx < MAX_CMD_SIZE - 1) {
-            key_buffer[buffer_idx++] = c;
-            printf("%c", c);
-        }
-    }
-    pic_send_eoi(1); // IRQ 1 = Keyboard
+
+    pic_send_eoi(1);
 }
 
 
@@ -95,5 +52,6 @@ void keyboard_handler(registers_t* regs) {
 // Initialization
 // -----------------------------------------------------------------------------
 void keyboard_init() {
+    kb_buffer_init();
     printf("Keyboard initialized.\n");
 }
